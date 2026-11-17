@@ -41,6 +41,12 @@ supabase/migrations/       Esquema, RLS y funciones (fuente de verdad de la base
 - El plan se activa únicamente desde el webhook de Wompi con la llave secreta del servidor.
 - Límites del plan Gratis aplicados en la base: 20 productos, 30 ventas al mes, tienda pausada.
 
+## Desplegar en Vercel (2 minutos)
+
+1. Entra a vercel.com/new e importa `rafaelramosb/vendela` (si no aparece, en "Adjust GitHub App Permissions" dale acceso a este repo).
+2. Framework: Next.js (se detecta solo). No necesitas variables para el primer despliegue: las públicas de Supabase están en `.env.production`.
+3. Deploy. Luego agrega en Settings → Environment Variables las de Wompi, `SUPABASE_SERVICE_ROLE_KEY` y `NEXT_PUBLIC_SUPPORT_WHATSAPP`, y vuelve a desplegar.
+
 ## Desarrollo local
 
 ```bash
