@@ -7,6 +7,7 @@ import { useToast } from '@/components/Toast';
 import { Sheet } from '@/components/Sheet';
 import { Thumb } from '@/components/Thumb';
 import { PurchaseSheet } from '@/components/PurchaseSheet';
+import { PhotoPicker } from '@/components/PhotoPicker';
 import { CATEGORIES, errorText, money, toInt } from '@/lib/format';
 
 function Productos() {
@@ -23,7 +24,7 @@ function Productos() {
   const load = useCallback(async () => {
     const { data, error } = await supabaseBrowser()
       .from('products')
-      .select('id,name,category,price,cost,active,created_at,variants(id,size,color,stock,created_at)')
+      .select('id,name,category,price,cost,active,created_at,description,images,variants(id,size,color,stock,created_at)')
       .eq('business_id', biz.id)
       .order('created_at', { ascending: false });
     if (error) return toast(errorText(error), 'error');
@@ -50,13 +51,13 @@ function Productos() {
       <button className="btn block" onClick={() => setBuying(true)} disabled={!active.length}>Compré mercancía</button>
       <input className="search" type="search" placeholder="Buscar producto" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar producto" />
       {list.length === 0 && <div className="card empty">{items.length === 0 ? 'Crea tu primer producto con sus tallas y colores.' : 'No hay productos aquí.'}</div>}
-      {list.map((p) => {
+      <div className="cards">{list.map((p) => {
         const st = p.variants.reduce((a: number, v: any) => a + v.stock, 0);
         const m = p.price ? Math.round(((p.price - p.cost) / p.price) * 100) : 0;
         return (
           <button className="card" key={p.id} style={{ textAlign: 'left' }} onClick={() => setEditing(p)}>
             <div className="row start" style={{ width: '100%' }}>
-              <Thumb category={p.category} color={p.variants[0]?.color} />
+              <Thumb category={p.category} color={p.variants[0]?.color} src={p.images?.[0]} size={64} />
               <div className="grow">
                 <b>{p.name}</b>
                 <div className="muted tiny num">Vendo a {money(p.price)} · me cuesta {money(p.cost)} · gano {m}%</div>
@@ -70,7 +71,7 @@ function Productos() {
             </div>
           </button>
         );
-      })}
+      })}</div>
       {items.some((p) => !p.active) && (
         <button className="link center" onClick={() => setShowArchived(!showArchived)}>{showArchived ? 'Ver productos activos' : 'Ver productos archivados'}</button>
       )}
@@ -87,6 +88,7 @@ function NewProduct({ open, onClose, onSaved }: { open: boolean; onClose: () => 
   const toast = useToast();
   const [price, setPrice] = useState('');
   const [cost, setCost] = useState('');
+  const [images, setImages] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const p = toInt(price), c = toInt(cost);
 
@@ -107,7 +109,7 @@ function NewProduct({ open, onClose, onSaved }: { open: boolean; onClose: () => 
     const sb = supabaseBrowser();
     const { data: prod, error } = await sb
       .from('products')
-      .insert({ business_id: biz.id, name, category: String(fd.get('category')), price: p, cost: c })
+      .insert({ business_id: biz.id, name, category: String(fd.get('category')), price: p, cost: c, images, description: String(fd.get('description') || '').trim() || null })
       .select('id')
       .single();
     if (error) {
@@ -121,6 +123,7 @@ function NewProduct({ open, onClose, onSaved }: { open: boolean; onClose: () => 
     toast(`${name} creado con ${rows.length} ${rows.length === 1 ? 'variante' : 'variantes'}`);
     setPrice('');
     setCost('');
+    setImages([]);
     onClose();
     onSaved();
   }
@@ -128,12 +131,14 @@ function NewProduct({ open, onClose, onSaved }: { open: boolean; onClose: () => 
   return (
     <Sheet open={open} onClose={onClose} title="Nuevo producto">
       <form onSubmit={onSubmit}>
+        <PhotoPicker businessId={biz.id} value={images} onChange={setImages} />
         <label className="field"><span>Nombre</span><input id="np-name" name="name" required maxLength={80} placeholder="Ej: Blusa de lino" /></label>
         <label className="field"><span>Tipo</span><select id="np-cat" name="category">{Object.entries(CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
         <div className="grid2">
           <label className="field"><span>Lo vendo a</span><input id="np-price" inputMode="numeric" value={price} onChange={(e) => setPrice(e.target.value)} required placeholder="59000" /></label>
           <label className="field"><span>Me cuesta</span><input id="np-cost" inputMode="numeric" value={cost} onChange={(e) => setCost(e.target.value)} placeholder="30000" /></label>
         </div>
+        <label className="field"><span>Descripción para tu tienda (opcional)</span><textarea id="np-desc" name="description" maxLength={600} placeholder="Tela, cómo horma, cuidados" /></label>
         <small className="muted">{p && c ? `Ganas ${money(p - c)} por unidad (${Math.round(((p - c) / p) * 100)}%).` : 'Escribe precio y costo para ver cuánto ganas.'}</small>
         <label className="field"><span>Tallas</span><input id="np-sizes" name="sizes" defaultValue="S, M, L" /><small>Sepáralas con coma. Si no tiene talla, déjalo vacío.</small></label>
         <label className="field"><span>Colores</span><input id="np-colors" name="colors" defaultValue="Negro" /><small>Sepáralos con coma.</small></label>
@@ -148,6 +153,7 @@ function EditProduct({ product, onClose, onSaved }: { product: any; onClose: () 
   const { biz } = useBiz();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const [images, setImages] = useState<string[]>(product.images || []);
   const [stocks, setStocks] = useState<Record<string, string>>(Object.fromEntries(product.variants.map((v: any) => [v.id, String(v.stock)])));
 
   async function save(e: React.FormEvent<HTMLFormElement>) {
@@ -157,7 +163,7 @@ function EditProduct({ product, onClose, onSaved }: { product: any; onClose: () 
     const sb = supabaseBrowser();
     const { error } = await sb
       .from('products')
-      .update({ name: String(fd.get('name')).trim(), category: String(fd.get('category')), price: toInt(String(fd.get('price'))), cost: toInt(String(fd.get('cost'))) })
+      .update({ name: String(fd.get('name')).trim(), category: String(fd.get('category')), price: toInt(String(fd.get('price'))), cost: toInt(String(fd.get('cost'))), images, description: String(fd.get('description') || '').trim() || null })
       .eq('id', product.id);
     if (error) {
       setBusy(false);
@@ -202,7 +208,9 @@ function EditProduct({ product, onClose, onSaved }: { product: any; onClose: () 
   return (
     <Sheet open onClose={onClose} title={product.name}>
       <form onSubmit={save}>
+        <PhotoPicker businessId={biz.id} value={images} onChange={setImages} />
         <label className="field"><span>Nombre</span><input id="ep-name" name="name" defaultValue={product.name} required maxLength={80} /></label>
+        <label className="field"><span>Descripción para tu tienda</span><textarea id="ep-desc" name="description" defaultValue={product.description || ''} maxLength={600} placeholder="Tela, cómo horma, cuidados" /></label>
         <label className="field"><span>Tipo</span><select id="ep-cat" name="category" defaultValue={product.category}>{Object.entries(CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
         <div className="grid2">
           <label className="field"><span>Lo vendo a</span><input id="ep-price" name="price" inputMode="numeric" defaultValue={product.price} required /></label>

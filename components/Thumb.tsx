@@ -10,7 +10,13 @@ export function colorOf(name?: string) {
   return COLORS[k] || COLORS[k.split(' ')[0]] || '#8b909a';
 }
 
-export function Thumb({ category, color, size = 52 }: { category?: string; color?: string; size?: number }) {
+export function Thumb({ category, color, size = 52, src }: { category?: string; color?: string; size?: number; src?: string | null }) {
+  if (src)
+    return (
+      <span className="thumb" style={{ width: size, height: size, background: 'var(--line)' }}>
+        <img src={src} alt="" loading="lazy" />
+      </span>
+    );
   const c = colorOf(color);
   let shape: JSX.Element;
   switch (category) {

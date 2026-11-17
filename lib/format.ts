@@ -1,7 +1,11 @@
 export const TZ = 'America/Bogota';
 
-const moneyFmt = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
-export const money = (n: number | null | undefined) => moneyFmt.format(Math.round(Number(n) || 0)).replace(/ /g, ' ');
+/** $ 55.000 con espacio que no se parte; formato fijo, igual en servidor y navegador. */
+export const money = (n: number | null | undefined) => {
+  const v = Math.round(Number(n) || 0);
+  const s = Math.abs(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${v < 0 ? '-' : ''}$\u00a0${s}`;
+};
 
 export const MONTHS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 

@@ -52,7 +52,7 @@ export default function Clientas() {
         <button className="tab" aria-pressed={sort === 'reciente'} onClick={() => setSort('reciente')}>Recientes</button>
       </div>
       {list.length === 0 && <div className="card empty">Las clientas aparecen aquí cuando les registras una venta.</div>}
-      {list.map((r) => (
+      <div className="cards">{list.map((r) => (
         <article className="card" key={r.id}>
           <div className="row">
             <div className="grow"><b>{r.name}</b><div className="muted tiny">{r.locality || 'Sin localidad'} · {r.n} {r.n === 1 ? 'compra' : 'compras'}{r.last ? ` · última ${dayLabel(r.last).toLowerCase()}` : ''}</div></div>
@@ -65,7 +65,7 @@ export default function Clientas() {
             )}
           </div>
         </article>
-      ))}
+      ))}</div>
     </>
   );
 }

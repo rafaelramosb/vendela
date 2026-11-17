@@ -17,6 +17,12 @@ export type Business = {
   trial_ends_at: string;
   paid_until: string | null;
   created_at: string;
+  logo_url: string | null;
+  cover_url: string | null;
+  brand_color: string | null;
+  instagram: string | null;
+  tiktok: string | null;
+  store_about: string | null;
 };
 
 type Ctx = { biz: Business; plan: Plan; email: string; refresh: () => Promise<void> };

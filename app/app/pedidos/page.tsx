@@ -88,7 +88,7 @@ function Pedidos() {
       ) : orders.length === 0 ? (
         <div className="card empty">No hay pedidos aquí.</div>
       ) : (
-        orders.map((o) => {
+        <div className="cards">{orders.map((o) => {
           const total = o.subtotal + o.shipping;
           const c = o.customers;
           const first = c?.name?.split(' ')[0] || '';
@@ -137,7 +137,7 @@ function Pedidos() {
               )}
             </article>
           );
-        })
+        })}</div>
       )}
 
       <Sheet open={!!payFor} onClose={() => setPayFor(null)} title={payFor ? `¿Cómo pagó el pedido #${payFor.number}?` : ''}>

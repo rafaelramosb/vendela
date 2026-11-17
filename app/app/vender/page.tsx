@@ -10,7 +10,7 @@ import { IconCheck, IconWhats } from '@/components/Icons';
 import { CATEGORIES, CHANNELS, LOCALIDADES, PAYMENTS, errorText, money, toInt, waLink } from '@/lib/format';
 
 type Variant = { id: string; size: string; color: string; stock: number };
-type Product = { id: string; name: string; category: string; price: number; cost: number; variants: Variant[] };
+type Product = { id: string; name: string; category: string; price: number; cost: number; images: string[]; variants: Variant[] };
 type CartItem = { variant_id: string; product: Product; v: Variant; qty: number; price: number };
 
 export default function Vender() {
@@ -28,7 +28,7 @@ export default function Vender() {
   const load = useCallback(async () => {
     const sb = supabaseBrowser();
     const [p, c] = await Promise.all([
-      sb.from('products').select('id,name,category,price,cost,variants(id,size,color,stock)').eq('business_id', biz.id).eq('active', true).order('name'),
+      sb.from('products').select('id,name,category,price,cost,images,variants(id,size,color,stock)').eq('business_id', biz.id).eq('active', true).order('name'),
       sb.from('customers').select('id,name,phone,locality,address').eq('business_id', biz.id).order('name').limit(1000),
     ]);
     if (p.error) toast(errorText(p.error), 'error');
@@ -83,7 +83,7 @@ export default function Vender() {
           const st = p.variants.reduce((a, v) => a + v.stock, 0);
           return (
             <button key={p.id} className="prod" onClick={() => setPick(p)} disabled={!st}>
-              <Thumb category={p.category} color={p.variants[0]?.color} />
+              <Thumb category={p.category} color={p.variants[0]?.color} src={p.images?.[0]} />
               <b>{p.name}</b>
               <span className="row"><span className="price num">{money(p.price)}</span><span className="muted tiny">{st ? `${st} disp.` : 'Agotado'}</span></span>
             </button>
@@ -102,7 +102,7 @@ export default function Vender() {
       <Sheet open={!!pick} onClose={() => setPick(null)} title={pick?.name}>
         {pick && (
           <div className="form">
-            <div className="row start"><Thumb category={pick.category} color={pick.variants[0]?.color} /><span className="total num">{money(pick.price)}</span></div>
+            <div className="row start"><Thumb category={pick.category} color={pick.variants[0]?.color} src={pick.images?.[0]} size={72} /><span className="total num">{money(pick.price)}</span></div>
             <div className="field">
               <span>Toca la talla y el color</span>
               <div className="vchips">

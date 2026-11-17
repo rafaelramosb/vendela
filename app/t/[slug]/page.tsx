@@ -1,28 +1,21 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { supabasePublic } from '@/lib/supabase/server';
-import { ToastProvider } from '@/components/Toast';
-import { StoreClient } from './StoreClient';
+import { getStore } from '@/lib/store';
+import { Catalog } from '@/components/store/Catalog';
 
 export const revalidate = 0;
-
-async function getStore(slug: string) {
-  const { data } = await supabasePublic().rpc('get_store', { p_slug: slug });
-  return data as any;
-}
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const s = await getStore(params.slug);
   if (!s) return { title: 'Tienda no encontrada' };
-  return { title: s.name, description: s.tagline || `Catálogo de ${s.name}. Pide por WhatsApp.`, robots: { index: true } };
+  const image = s.cover || s.products?.find((p) => p.images[0])?.images[0] || s.logo || undefined;
+  const description = s.tagline || `Catálogo de ${s.name}. Elige y pide por WhatsApp.`;
+  return {
+    title: { absolute: s.name },
+    description,
+    openGraph: { title: s.name, description, images: image ? [image] : undefined, type: 'website' },
+  };
 }
 
-export default async function StorePage({ params }: { params: { slug: string } }) {
-  const store = await getStore(params.slug);
-  if (!store) notFound();
-  return (
-    <ToastProvider>
-      <StoreClient store={store} />
-    </ToastProvider>
-  );
+export default function StoreHome() {
+  return <Catalog />;
 }

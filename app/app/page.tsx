@@ -81,6 +81,7 @@ export default function Inicio() {
         <button className="btn" onClick={() => setSheet('compra')}>Compré mercancía</button>
       </div>
 
+      <div className="dash">
       <section className="card">
         <h2>¿Qué red me vende más?</h2>
         {s.by_channel.length ? (
@@ -128,6 +129,7 @@ export default function Inicio() {
           <div className="empty">Todo tiene stock.</div>
         )}
       </section>
+      </div>
 
       <ExpenseSheet open={sheet === 'gasto'} onClose={() => setSheet('')} onSaved={load} />
       <PurchaseSheet open={sheet === 'compra'} onClose={() => setSheet('')} onSaved={load} />
